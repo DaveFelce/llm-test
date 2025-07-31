@@ -75,7 +75,7 @@ class Command(BaseCommand):
             orchestrator = LLMOrchestrator()
             checker = FactChecker()
 
-            # 1. Gather summaries
+            # Gather summaries
             summaries = self.gather_summaries()
             if len(summaries) < options["min_summaries"]:
                 msg = f"Insufficient summaries: {len(summaries)} < {options['min_summaries']}"
@@ -83,11 +83,12 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(msg))
                 return
 
-            # 2. Generate trends article
+            # Generate trends article
             self.stdout.write(f"Generating trends article from {len(summaries)} summaries...")
             article_text = self.generate_trends(orchestrator, summaries)
 
-            # 3. Fact-check the article
+            # TODO: this needs a specialised prompt to verify the trends article and flag unsuported claims
+            # Fact-check the article
             self.stdout.write("Fact-checking article...")
             score, issues = self.check_facts(checker, article_text, "\n\n".join(summaries))
 
@@ -96,7 +97,7 @@ class Command(BaseCommand):
                 logger.warning(msg)
                 self.stdout.write(self.style.WARNING(msg))
 
-            # 4. Save the report
+            # Save the report
             report = self.save_report(article_text, issues)
 
             self.stdout.write(self.style.SUCCESS(f"TrendReport #{report.pk} saved (hallucination score: {score:.2f})"))

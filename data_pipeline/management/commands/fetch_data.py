@@ -48,7 +48,7 @@ class Command(BaseCommand):
                             "title": article_data.title,
                             "abstract": article_data.abstract,
                             "pub_date": article_data.pub_date,
-                            "raw_json": article_data.json(),
+                            "raw_json": article_data.model_dump_json(),
                         },
                     )
                     verb = "Created" if created else "Updated"
