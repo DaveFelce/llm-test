@@ -1,8 +1,9 @@
-from django.conf import settings
-from langchain.llms import OpenAI
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from typing import List
+
+from django.conf import settings
+from langchain.chains import LLMChain
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 
 
 class LLMOrchestrator:
