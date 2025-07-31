@@ -1,0 +1,45 @@
+services:
+  web:
+    build: .
+    command: >
+      sh -c "
+        python manage.py makemigrations data_pipeline &&
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/covid_trends_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: covid_trends_user
+      POSTGRES_PASSWORD: Pa55word
+      POSTGRES_DB: covid_trends_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pycharm:
+    build: .
+    command: >
+      sh -c "
+        python manage.py makemigrations data_pipeline &&
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+    driver: local

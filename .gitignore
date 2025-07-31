@@ -1,0 +1,68 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class   [oai_citation:0‡GitHub](https://github.com/github/gitignore/blob/main/Python.gitignore?utm_source=chatgpt.com)
+
+# C extensions
+*.so   [oai_citation:1‡GitHub](https://github.com/github/gitignore/blob/main/Python.gitignore?utm_source=chatgpt.com)
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg   [oai_citation:2‡GitHub](https://github.com/github/gitignore/blob/main/Python.gitignore?utm_source=chatgpt.com)
+
+# Django-specific
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/   [oai_citation:3‡GitHub](https://github.com/jpadilla/django-project-template/blob/master/.gitignore?utm_source=chatgpt.com)
+
+# (Optional) ignore migration files if you version them elsewhere
+# */migrations/*.py
+# !*/migrations/__init__.py 
+
+# Environment / virtualenv
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+__pypackages__/   [oai_citation:4‡GitHub](https://github.com/github/gitignore/blob/main/Python.gitignore?utm_source=chatgpt.com)
+
+# Celery
+celerybeat-schedule
+celerybeat.pid   [oai_citation:5‡pedroserrudo.com](https://pedroserrudo.com/blog/gitignore-for-python-django-flask/?utm_source=chatgpt.com)
+
+# Testing & type-checking caches
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/   [oai_citation:6‡pedroserrudo.com](https://pedroserrudo.com/blog/gitignore-for-python-django-flask/?utm_source=chatgpt.com)
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace   [oai_citation:7‡Gist](https://gist.github.com/PraneethKarnena/6a8aa9c032b17477cfcde1076b0c1753?utm_source=chatgpt.com)
+
+# OS files
+.DS_Store
+Thumbs.db
