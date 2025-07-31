@@ -1,0 +1,40 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: read               # so it can fetch your code
+  security-events: write       # to submit CodeQL alerts
+
+jobs:
+  analyze:
+    name: Analyze code with CodeQL
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['python']
+    steps:
+      # 1. Check out your repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # build-mode: none|autobuild|manual  # choose if needed
+
+      # (Optional) Custom build steps for compiled languages
+      - name: Build
+        if: matrix.language == 'go'
+        run: go build ./...
+
+      # 3. Run the analysis and upload results
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

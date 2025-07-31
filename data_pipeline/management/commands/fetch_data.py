@@ -1,8 +1,15 @@
-from django.core.management.base import BaseCommand
-from django.db import transaction
+import logging
+from calendar import monthrange
+from datetime import date, timedelta
+
 from data_pipeline.models import Article
 from data_pipeline.services.pubmed_client import PubMedClient
-from datetime import date, timedelta
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
     help = "Fetch Covid-19 abstracts from PubMed for each month of 2020"
@@ -15,16 +22,13 @@ class Command(BaseCommand):
             help="Number of abstracts to fetch per month",
         )
 
-    def handle(self, *args, **options):
-        client = PubMedClient()
-        per_month = options["per_month"]
+    def process_month(self, client, month, per_month):
+        """Process a single month's worth of abstracts."""
+        start = date(2020, month, 1)
+        _, last_day = monthrange(2020, month)
+        end = date(2020, month, last_day)
 
-        # Loop through each month in 2020
-        for month in range(1, 13):
-            start = date(2020, month, 1)
-            # rough end-of-month
-            end = (start + timedelta(days=31)).replace(day=1) - timedelta(days=1)
-            self.stdout.write(f"Fetching {per_month} abstracts for {start:%Y-%m}")
+        try:
             abstracts = client.fetch(
                 query="Covid-19[Title] AND 2020[Date - Publication]",
                 start_date=start,
@@ -44,5 +48,22 @@ class Command(BaseCommand):
                         },
                     )
                     verb = "Created" if created else "Updated"
-                    self.stdout.write(f"  {verb} Article PMID={article.pmid}")
+                    logger.info(f"{verb} Article PMID={article.pmid}")
+
+            return len(abstracts)
+        except Exception as e:
+            logger.error(f"Error processing month {start:%Y-%m}: {str(e)}")
+            return 0
+
+    def handle(self, *args, **options):
+        client = PubMedClient()
+        per_month = options["per_month"]
+
+        total_processed = 0
+        for month in tqdm(range(1, 13), desc="Processing months"):
+            logger.info(f"Processing month {month}/2020")
+            processed = self.process_month(client, month, per_month)
+            total_processed += processed
+
+        logger.info(f"✅ Fetch complete. Processed {total_processed} articles")
         self.stdout.write(self.style.SUCCESS("✅ Fetch complete"))
