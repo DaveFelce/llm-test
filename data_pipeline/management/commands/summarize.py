@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 )
             logger.info("Saved summary for PMID=%s", article.pmid)
             return True
-        except Exception as e:
+        except Exception as e:  # TODO: Be more specific with exceptions
             logger.error("Error summarizing PMID=%s: %s", article.pmid, str(e))
             return False
 

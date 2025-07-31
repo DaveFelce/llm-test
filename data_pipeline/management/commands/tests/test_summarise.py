@@ -5,10 +5,10 @@ from django.core.management import call_command
 
 
 @pytest.mark.django_db
-def test_summarise_creates_summaries(monkeypatch):
+def test_summarize_creates_summaries(monkeypatch):
     """
-    Given three unsummarised Articles, the summarise command should
-    create exactly three Summary objects with the text returned by LLMOrchestrator.summarise.
+    Given three unsummarized Articles, the summarize command should
+    create exactly three Summary objects with the text returned by LLMOrchestrator.summarize.
     """
     # Arrange: create 3 articles
     [
@@ -25,7 +25,7 @@ def test_summarise_creates_summaries(monkeypatch):
     monkeypatch.setattr(LLMOrchestrator, "summarize", fake_summarize)
 
     # Act
-    call_command("summarise")
+    call_command("summarize")
 
     # Assert: one Summary per Article
     all_summaries = Summary.objects.order_by("article__pmid")
@@ -36,7 +36,7 @@ def test_summarise_creates_summaries(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_summarise_skips_already_summarised(monkeypatch):
+def test_summarize_skips_already_summarized(monkeypatch):
     """
     Articles that already have a Summary should be ignored.
     Running the command should not create duplicate summaries.
@@ -51,7 +51,7 @@ def test_summarise_skips_already_summarised(monkeypatch):
     monkeypatch.setattr(LLMOrchestrator, "summarize", lambda self, abstract: "New summary")
 
     # Act
-    call_command("summarise")
+    call_command("summarize")
 
     # Assert
     assert Summary.objects.filter(article=art1).count() == 1  # untouched
@@ -61,7 +61,7 @@ def test_summarise_skips_already_summarised(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_summarise_continues_on_error(monkeypatch, caplog):
+def test_summarize_continues_on_error(monkeypatch, caplog):
     """
     If the orchestrator raises on one article, the command should log an error
     and still process the remaining articles.
@@ -80,7 +80,7 @@ def test_summarise_continues_on_error(monkeypatch, caplog):
     caplog.set_level("ERROR")
 
     # Act
-    call_command("summarise")
+    call_command("summarize")
 
     # Assert: only one summary created
     assert Summary.objects.count() == 1

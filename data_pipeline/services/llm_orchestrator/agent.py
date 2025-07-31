@@ -1,8 +1,8 @@
 from typing import List
 
 from django.conf import settings
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
 
@@ -31,8 +31,7 @@ class LLMOrchestrator:
                 "Abstract:\n{abstract}\n"
             ),
         )
-        # TODO: this is deprecated in favor of RunnableSequence
-        self.summary_chain = LLMChain(llm=self.llm, prompt=self.summary_prompt)
+        self.summary_chain = self.summary_prompt | self.llm | StrOutputParser()
 
         self.trend_prompt = PromptTemplate(
             input_variables=["summaries"],
@@ -44,11 +43,11 @@ class LLMOrchestrator:
                 "Summaries:\n{summaries}\n"
             ),
         )
-        self.trend_chain = LLMChain(llm=self.llm, prompt=self.trend_prompt)
+        self.trend_chain = self.trend_prompt | self.llm | StrOutputParser()
 
     def summarize(self, abstract: str) -> str:
-        return self.summary_chain.run({"abstract": abstract}).strip()
+        return self.summary_chain.invoke({"abstract": abstract}).strip()
 
     def synthesize_trends(self, summaries: List[str]) -> str:
         combined = "\n\n".join(summaries)
-        return self.trend_chain.run({"summaries": combined}).strip()
+        return self.trend_chain.invoke({"summaries": combined}).strip()
