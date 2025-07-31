@@ -4,12 +4,18 @@ import pytest
 import responses
 from data_pipeline.models import Article
 from data_pipeline.services.enums import PubMedURLs
+from data_pipeline.services.pubmed_client import PubMedClient
 from django.core.management import call_command
 
 
 @pytest.mark.django_db
 @responses.activate
 def test_fetch_creates_articles() -> None:
+    """Test that fetch_data creates Article objects for each PMID."""
+    # Arrange
+    PubMedClient.fetch.retry.wait = None
+    PubMedClient.fetch.retry.wait = None
+
     # 1) Stub ESearch → return three PMIDs
     ids = ["1", "2", "3"]
     responses.add(
@@ -28,14 +34,20 @@ def test_fetch_creates_articles() -> None:
           <MedlineCitation>
             <PMID>{id}</PMID>
             <Article>
+              <Journal>
+                <JournalIssue>
+                  <PubDate>
+                    <Year>2020</Year>
+                    <Month>01</Month>
+                    <Day>0{id}</Day>
+                  </PubDate>
+                </JournalIssue>
+              </Journal>
               <ArticleTitle>Title {id}</ArticleTitle>
               <Abstract>
                 <AbstractText>Abstract text {id}</AbstractText>
               </Abstract>
             </Article>
-            <DateCreated>
-              <Year>2020</Year><Month>1</Month><Day>{id}</Day>
-            </DateCreated>
           </MedlineCitation>
         </PubmedArticle>
         """
@@ -48,10 +60,11 @@ def test_fetch_creates_articles() -> None:
         content_type="application/xml",
     )
 
+    # Act
     # Run the command (TQDM_RANGE=2 → only month=1)
     call_command("fetch_data")
 
-    # Assert three articles were created
+    # Assert
     articles = Article.objects.all()
     assert articles.count() == 3
 
@@ -81,10 +94,18 @@ def test_fetch_updates_existing_article() -> None:
         <MedlineCitation>
           <PMID>100</PMID>
           <Article>
+            <Journal>
+              <JournalIssue>
+                <PubDate>
+                  <Year>2020</Year>
+                  <Month>01</Month>
+                  <Day>05</Day>
+                </PubDate>
+              </JournalIssue>
+            </Journal>
             <ArticleTitle>Title A</ArticleTitle>
             <Abstract><AbstractText>Abstract A</AbstractText></Abstract>
           </Article>
-          <DateCreated><Year>2020</Year><Month>1</Month><Day>1</Day></DateCreated>
         </MedlineCitation>
       </PubmedArticle>
     </PubmedArticleSet>"""
@@ -111,10 +132,18 @@ def test_fetch_updates_existing_article() -> None:
         <MedlineCitation>
           <PMID>100</PMID>
           <Article>
+            <Journal>
+              <JournalIssue>
+                <PubDate>
+                  <Year>2020</Year>
+                  <Month>01</Month>
+                  <Day>05</Day>
+                </PubDate>
+              </JournalIssue>
+            </Journal>
             <ArticleTitle>Title B</ArticleTitle>
             <Abstract><AbstractText>Abstract B</AbstractText></Abstract>
           </Article>
-          <DateCreated><Year>2020</Year><Month>1</Month><Day>1</Day></DateCreated>
         </MedlineCitation>
       </PubmedArticle>
     </PubmedArticleSet>"""

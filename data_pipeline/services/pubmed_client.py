@@ -1,8 +1,13 @@
+import logging
+from datetime import date
 import xml.etree.ElementTree as ET
 from datetime import date
 
 import requests
 from data_pipeline.services.enums import ArticleData, PubMedURLs
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
+
+logger = logging.getLogger(__name__)
 
 
 class PubMedClient:
@@ -10,7 +15,71 @@ class PubMedClient:
     Fetches PubMed abstracts via NCBI E-utilities.
     """
 
+    @staticmethod
+    def parse_publication_date(pubmed_article_element) -> date | None:
+        """
+        Attempt to extract a publication date from several possible XML locations,
+        falling back in this order:
+          1) MedlineCitation/DateCreated
+          2) JournalIssue/PubDate
+          3) MedlineCitation/DateRevised
+          4) PubmedData/History PubMedPubDate[@PubStatus="pubmed"]
+        """
+        # 1) Look for the original creation date
+        date_created_node = pubmed_article_element.find(
+            ".//MedlineCitation/DateCreated"
+        )
+        if date_created_node is not None:
+            year_text = date_created_node.findtext("Year")
+            month_text = date_created_node.findtext("Month")
+            day_text = date_created_node.findtext("Day")
+            return date(int(year_text), int(month_text), int(day_text))
+
+        # 2) Next, try the journal’s publication date
+        journal_pub_date_node = pubmed_article_element.find(
+            ".//JournalIssue/PubDate"
+        )
+        if journal_pub_date_node is not None and journal_pub_date_node.findtext("Year"):
+            year_text = journal_pub_date_node.findtext("Year")
+            # default to January 1 if Month/Day are missing
+            month_text = journal_pub_date_node.findtext("Month") or "1"
+            day_text = journal_pub_date_node.findtext("Day") or "1"
+            return date(int(year_text), int(month_text), int(day_text))
+
+        # 3) Then, the last‐revised date
+        date_revised_node = pubmed_article_element.find(
+            ".//MedlineCitation/DateRevised"
+        )
+        if date_revised_node is not None:
+            year_text = date_revised_node.findtext("Year")
+            month_text = date_revised_node.findtext("Month")
+            day_text = date_revised_node.findtext("Day")
+            return date(int(year_text), int(month_text), int(day_text))
+
+        # 4) Finally, the PubMed “pubmed” history date
+        pubmed_history_date_node = pubmed_article_element.find(
+            './/PubmedData/History/PubMedPubDate[@PubStatus="pubmed"]'
+        )
+        if pubmed_history_date_node is not None:
+            year_text = pubmed_history_date_node.findtext("Year")
+            month_text = pubmed_history_date_node.findtext("Month") or "1"
+            day_text = pubmed_history_date_node.findtext("Day") or "1"
+            return date(int(year_text), int(month_text), int(day_text))
+
+        # If no date was found, return None
+        return None
+
+    @retry(
+        stop=stop_after_attempt(1),  # TODO: Increase this for production
+        wait=wait_exponential(multiplier=2, min=1, max=64),
+        reraise=True,
+        before_sleep=before_sleep_log(logger, logging.INFO),
+    )
     def fetch(self, query: str, start_date: date, end_date: date, limit: int = 30) -> list[ArticleData]:
+        """Fetches articles from PubMed based on a query and date range."""
+
+        logger.info(f"Fetching articles for query: {query} from {start_date} to {end_date}")
+
         # 1) ESearch to get PMIDs
         esearch_params = {
             "db": "pubmed",
@@ -21,10 +90,14 @@ class PubMedClient:
             "retmax": limit,
             "retmode": "json",
         }
+
         resp = requests.get(PubMedURLs.ESEARCH_URL, params=esearch_params)
+        logger.debug(f"ESearch response: {resp.status_code} {resp.text}")
         resp.raise_for_status()
+
         ids = resp.json().get("esearchresult", {}).get("idlist", [])
         if not ids:
+            logger.info(f"No PubMed IDs found in response: {resp.text}")
             return []
 
         # 2) EFetch to retrieve full records (XML)
@@ -34,6 +107,7 @@ class PubMedClient:
             "retmode": "xml",
         }
         resp = requests.get(PubMedURLs.EFETCH_URL, params=efetch_params)
+        logger.debug(f"EFetch response: {resp.status_code} {resp.text}")
         resp.raise_for_status()
 
         # 3) Parse XML
@@ -49,16 +123,7 @@ class PubMedClient:
                 " ".join([t.text or "" for t in abs_node.findall("AbstractText")]) if abs_node is not None else ""
             )
             # Publication date
-            date_node = med.find("DateCreated")
-            pub_date = (
-                date(
-                    int(date_node.findtext("Year")),
-                    int(date_node.findtext("Month")),
-                    int(date_node.findtext("Day")),
-                )
-                if date_node is not None
-                else None
-            )
+            pub_date = self.parse_publication_date(article)
 
             results.append(
                 ArticleData(
@@ -69,4 +134,6 @@ class PubMedClient:
                     raw_json={},
                 )
             )
+        logger.info(f"Fetched {len(results)} articles for query: {query}")
+
         return results
