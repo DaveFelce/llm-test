@@ -1,16 +1,8 @@
-from datetime import date
-from typing import List
-import requests
 import xml.etree.ElementTree as ET
-from pydantic import BaseModel, Field
+from datetime import date
 
-
-class ArticleData(BaseModel):
-    pmid: str
-    title: str
-    abstract: str
-    pub_date: date
-    raw_json: dict = Field(default_factory=dict)
+import requests
+from data_pipeline.services.enums import ArticleData, PubMedURLs
 
 
 class PubMedClient:
@@ -18,10 +10,7 @@ class PubMedClient:
     Fetches PubMed abstracts via NCBI E-utilities.
     """
 
-    ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-    EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-
-    def fetch(self, query: str, start_date: date, end_date: date, limit: int = 30) -> List[ArticleData]:
+    def fetch(self, query: str, start_date: date, end_date: date, limit: int = 30) -> list[ArticleData]:
         # 1) ESearch to get PMIDs
         esearch_params = {
             "db": "pubmed",
@@ -32,7 +21,7 @@ class PubMedClient:
             "retmax": limit,
             "retmode": "json",
         }
-        resp = requests.get(self.ESEARCH_URL, params=esearch_params)
+        resp = requests.get(PubMedURLs.ESEARCH_URL, params=esearch_params)
         resp.raise_for_status()
         ids = resp.json().get("esearchresult", {}).get("idlist", [])
         if not ids:
@@ -44,14 +33,14 @@ class PubMedClient:
             "id": ",".join(ids),
             "retmode": "xml",
         }
-        resp = requests.get(self.EFETCH_URL, params=efetch_params)
+        resp = requests.get(PubMedURLs.EFETCH_URL, params=efetch_params)
         resp.raise_for_status()
 
         # 3) Parse XML
         root = ET.fromstring(resp.text)
-        results: List[ArticleData] = []
-        for art in root.findall(".//PubmedArticle"):
-            med = art.find("MedlineCitation")
+        results: list[ArticleData] = []
+        for article in root.findall(".//PubmedArticle"):
+            med = article.find("MedlineCitation")
             pmid = med.findtext("PMID") or ""
             article = med.find("Article")
             title = article.findtext("ArticleTitle") or ""
