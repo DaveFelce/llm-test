@@ -1,9 +1,9 @@
 from typing import List
 
 from django.conf import settings
-from langchain.chains import LLMChain
-from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import ChatOpenAI
 
 
 class LLMOrchestrator:
@@ -12,10 +12,13 @@ class LLMOrchestrator:
     """
 
     def __init__(self):
-        self.llm = OpenAI(
-            model_name=getattr(settings, "OPENAI_MODEL", "gpt-4"),
-            temperature=getattr(settings, "OPENAI_TEMPERATURE", 0.7),
-            openai_api_key=settings.OPENAI_API_KEY,
+        self.llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
+            temperature= 0.7,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            api_key=settings.OPENAI_API_KEY,
         )
 
         self.summary_prompt = PromptTemplate(
@@ -28,7 +31,7 @@ class LLMOrchestrator:
                 "Abstract:\n{abstract}\n"
             ),
         )
-        self.summary_chain = LLMChain(llm=self.llm, prompt=self.summary_prompt)
+        self.summary_chain = self.summary_prompt | self.llm | StrOutputParser()
 
         self.trend_prompt = PromptTemplate(
             input_variables=["summaries"],
@@ -40,11 +43,11 @@ class LLMOrchestrator:
                 "Summaries:\n{summaries}\n"
             ),
         )
-        self.trend_chain = LLMChain(llm=self.llm, prompt=self.trend_prompt)
+        self.trend_chain = self.trend_prompt | self.llm | StrOutputParser()
 
     def summarize(self, abstract: str) -> str:
-        return self.summary_chain.run({"abstract": abstract}).strip()
+        return self.summary_chain.invoke({"abstract": abstract}).strip()
 
     def synthesize_trends(self, summaries: List[str]) -> str:
         combined = "\n\n".join(summaries)
-        return self.trend_chain.run({"summaries": combined}).strip()
+        return self.trend_chain.invoke({"summaries": combined}).strip()

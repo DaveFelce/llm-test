@@ -1,9 +1,9 @@
 import json
 from django.conf import settings
-from langchain.llms import OpenAI
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from typing import List, Tuple
+from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import ChatOpenAI
 
 
 class FactChecker:
@@ -13,11 +13,15 @@ class FactChecker:
     """
 
     def __init__(self):
-        self.llm = OpenAI(
-            model_name=getattr(settings, "OPENAI_MODEL", "gpt-4"),
+        self.llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
             temperature=0,
-            openai_api_key=settings.OPENAI_API_KEY,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            api_key=settings.OPENAI_API_KEY,
         )
+
         self.prompt = PromptTemplate(
             input_variables=["abstract", "summary"],
             template=(
@@ -29,9 +33,9 @@ class FactChecker:
                 "Abstract:\n{abstract}\n\nSummary:\n{summary}"
             ),
         )
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        self.chain = self.prompt | self.llm | StrOutputParser()
 
     def score(self, summary: str, abstract: str) -> Tuple[int, List[str]]:
-        response = self.chain.run({"abstract": abstract, "summary": summary})
+        response = self.chain.invoke({"abstract": abstract, "summary": summary})
         data = json.loads(response)
         return data.get("score", 0), data.get("issues", [])
