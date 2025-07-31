@@ -29,4 +29,4 @@ class Command(BaseCommand):
                 text=article_text,
                 issues=issues,
             )
-        self.stdout.write(self.style.SUCCESS(f"✅ TrendReport #{report.pk} saved"))
+        self.stdout.write(self.style.SUCCESS(f"TrendReport #{report.pk} saved"))

@@ -2,8 +2,10 @@ from typing import List
 
 from django.conf import settings
 from langchain.chains import LLMChain
-from langchain.llms import OpenAI
+# from langchain.llms import OpenAI
+# from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
 
 
 class LLMOrchestrator:
@@ -12,10 +14,13 @@ class LLMOrchestrator:
     """
 
     def __init__(self):
-        self.llm = OpenAI(
-            model_name=getattr(settings, "OPENAI_MODEL", "gpt-4"),
-            temperature=getattr(settings, "OPENAI_TEMPERATURE", 0.7),
-            openai_api_key=settings.OPENAI_API_KEY,
+        self.llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            api_key=settings.OPENAI_API_KEY,
         )
 
         self.summary_prompt = PromptTemplate(

@@ -25,4 +25,4 @@ class Command(BaseCommand):
                 f"  Score={score}, Issues={len(issues)}"
             )
 
-        self.stdout.write(self.style.SUCCESS("✅ Validation complete"))
+        self.stdout.write(self.style.SUCCESS("Validation complete"))
