@@ -12,6 +12,8 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 TQDM_RANGE = 2
+DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH = 5  # TODO: should be 30, but for testing we use 5 to keep costs down
+
 
 class Command(BaseCommand):
     help = "Fetch Covid-19 abstracts from PubMed for each month of 2020"
@@ -20,7 +22,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--per-month",
             type=int,
-            default=30,
+            default=DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH,
             help="Number of abstracts to fetch per month",
         )
 

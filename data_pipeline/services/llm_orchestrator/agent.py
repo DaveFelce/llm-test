@@ -2,8 +2,6 @@ from typing import List
 
 from django.conf import settings
 from langchain.chains import LLMChain
-# from langchain.llms import OpenAI
-# from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
@@ -33,6 +31,7 @@ class LLMOrchestrator:
                 "Abstract:\n{abstract}\n"
             ),
         )
+        # TODO: this is deprecated in favor of RunnableSequence
         self.summary_chain = LLMChain(llm=self.llm, prompt=self.summary_prompt)
 
         self.trend_prompt = PromptTemplate(
