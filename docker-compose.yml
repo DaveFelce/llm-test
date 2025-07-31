@@ -24,6 +24,8 @@ services:
       POSTGRES_USER: covid_trends_user
       POSTGRES_PASSWORD: Pa55word
       POSTGRES_DB: covid_trends_db
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
