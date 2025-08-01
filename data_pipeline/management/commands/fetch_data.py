@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-MONTH_RANGE = 2
+DEFAULT_MONTH_RANGE = 2
 DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH = 25
 
 
@@ -25,6 +25,12 @@ class Command(BaseCommand):
             type=int,
             default=DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH,
             help="Number of abstracts to fetch per month",
+        )
+        parser.add_argument(
+            "--month-range",
+            type=int,
+            default=DEFAULT_MONTH_RANGE,
+            help="Number of months to process (starting from January)",
         )
 
     def process_month(self, client: PubMedClient, month: int, per_month: int) -> int:
@@ -65,8 +71,8 @@ class Command(BaseCommand):
         per_month = options["per_month"]
 
         total_processed = 0
-        for month in tqdm(range(1, MONTH_RANGE), desc="Processing months"):
-            logger.info(f"Processing month {month}/2020")
+        for month in tqdm(range(1, DEFAULT_MONTH_RANGE), desc="Processing months"):
+            logger.info(f"Processing month {month}/2020")  # TODO: Use month name, don't hardcode year
             processed: int = self.process_month(client, month, per_month)
             total_processed += processed
 

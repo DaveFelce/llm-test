@@ -79,6 +79,7 @@ class PubMedClient:
     def fetch(self, query: str, start_date: date, end_date: date, limit: int = 30) -> list[ArticleData]:
         """Fetches articles from PubMed based on a query and date range."""
 
+        # TODO: batch requests if limit is high
         # Two stage process: first query ESearch to get PMIDs
         esearch_params = {
             "db": "pubmed",
