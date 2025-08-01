@@ -24,9 +24,27 @@
 5. **Django Admin**: A built-in feature of Django that provides a web-based interface for managing application data, making it easy to view and manipulate database records.
 
 ## TODO
-1. Write unit tests. At the moment, only integration tests are written.
+1. Write unit tests. At the moment, only integration tests are written for the commands
 2. Write a LOT more tests for the pubmed client and the services
 3. Use Entrez library for PubMed API calls instead of the custom `PubMedClient` class
+4. Use jinja2 templates for the prompts, load the examples and interpolate them into the prompt.
+
+For testing the LLM calls, a set of fixtures could be provided in the `fixtures` directory.  The system prompt 
+is the overall instructions for the llm separate from this specific example, the prompt is the current
+example to work from. The test runs just this llm on the entries found in test-fixtures.json (which you can
+just save from running the previous steps) coupled with the intended outputs.
+
+```text
+llm_orchestrator/
+├── fixtures/
+│   ├── examples.json
+│   └── test-fixtures.json
+├── agent.py
+├── system-prompt.jinja
+├── prompt.jinja
+├── models.py
+└── test_agent.py
+```
 
 ## High level architecture diagram
 
