@@ -1,3 +1,4 @@
+import argparse
 import logging
 from calendar import monthrange
 from datetime import date
@@ -11,22 +12,28 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-TQDM_RANGE = 2
-DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH = 5  # TODO: should be 30, but for testing we use 5 to keep costs down
+DEFAULT_MONTH_RANGE = 2
+DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH = 25
 
 
 class Command(BaseCommand):
     help = "Fetch Covid-19 abstracts from PubMed for each month of 2020"
 
-    def add_arguments(self, parser) -> None:
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--per-month",
             type=int,
             default=DEFAULT_NUMBER_OF_ARTICLES_TO_FETCH,
             help="Number of abstracts to fetch per month",
         )
+        parser.add_argument(
+            "--month-range",
+            type=int,
+            default=DEFAULT_MONTH_RANGE,
+            help="Number of months to process (starting from January)",
+        )
 
-    def process_month(self, client, month, per_month) -> int:
+    def process_month(self, client: PubMedClient, month: int, per_month: int) -> int:
         """Process a single month's worth of abstracts."""
         start = date(2020, month, 1)
         _, last_day = monthrange(2020, month)
@@ -64,8 +71,8 @@ class Command(BaseCommand):
         per_month = options["per_month"]
 
         total_processed = 0
-        for month in tqdm(range(1, TQDM_RANGE), desc="Processing months"):
-            logger.info(f"Processing month {month}/2020")
+        for month in tqdm(range(1, DEFAULT_MONTH_RANGE), desc="Processing months"):
+            logger.info(f"Processing month {month}/2020")  # TODO: Use month name, don't hardcode year
             processed: int = self.process_month(client, month, per_month)
             total_processed += processed
 

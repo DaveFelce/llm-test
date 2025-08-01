@@ -7,7 +7,7 @@ from django.core.management import call_command
 
 
 @pytest.mark.django_db
-def test_validate_creates_validations(monkeypatch, capsys):
+def test_validate_creates_validations(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture):
     """
     Given two unsatisfied Summaries, the validate command should
     create two Validation records and print the correct progress.
@@ -43,7 +43,7 @@ def test_validate_creates_validations(monkeypatch, capsys):
 
 
 @pytest.mark.django_db
-def test_validate_warns_on_high_score(monkeypatch, caplog):
+def test_validate_warns_on_high_score(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture):
     """
     If the hallucination_score exceeds max_score, a warning should be logged,
     but Validation should still be created.
@@ -80,7 +80,7 @@ def test_validate_warns_on_high_score(monkeypatch, caplog):
 
 
 @pytest.mark.django_db
-def test_validate_continues_on_error(monkeypatch, capsys):
+def test_validate_continues_on_error(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture):
     """
     If FactChecker.score raises for one summary, the command should log an error
     for that PMID and continue with the others.
@@ -101,7 +101,7 @@ def test_validate_continues_on_error(monkeypatch, capsys):
         pub_date="2020-01-02",
         raw_json={"pmid": "E2"},
     )
-    summ2 = Summary.objects.create(article=article2, text="good summary")
+    summary2 = Summary.objects.create(article=article2, text="good summary")
 
     # Stub score: first raises, second succeeds
     def flaky_score(self, summary_text, source):
@@ -116,7 +116,7 @@ def test_validate_continues_on_error(monkeypatch, capsys):
 
     # Only one Validation created
     assert Validation.objects.count() == 1
-    assert Validation.objects.filter(summary=summ2).exists()
+    assert Validation.objects.filter(summary=summary2).exists()
 
     # Check stdout contains error line and final summary
     out = capsys.readouterr().out

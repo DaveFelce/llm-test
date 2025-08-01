@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 from data_pipeline.models import Summary, Validation
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "Validate summaries for hallucinations and record scores"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--max-score",
             type=float,
@@ -31,7 +32,7 @@ class Command(BaseCommand):
             logger.error("Failed to fetch pending summaries: %s", str(e))
             raise
 
-    def validate_summary(self, checker, summary):
+    def validate_summary(self, checker: FactChecker, summary: Summary) -> Validation:
         """Validate a single summary and save results."""
         try:
             score, issues = checker.score(summary.text, summary.article.abstract)
@@ -96,7 +97,7 @@ class Command(BaseCommand):
             # Final status
             self.stdout.write(self.style.SUCCESS(f"Validation complete: {success_count}/{total} summaries processed"))
 
-        except Exception as e:
+        except Exception as e:  # TODO: Be more specific with exceptions
             logger.error("Command failed: %s", str(e))
             self.stdout.write(self.style.ERROR(f"Failed: {str(e)}"))
             raise

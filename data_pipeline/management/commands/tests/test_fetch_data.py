@@ -16,7 +16,7 @@ def test_fetch_creates_articles() -> None:
     PubMedClient.fetch.retry.wait = None
     PubMedClient.fetch.retry.wait = None
 
-    # 1) Stub ESearch → return three PMIDs
+    # Stub ESearch → return three PMIDs
     ids = ["1", "2", "3"]
     responses.add(
         responses.GET,
@@ -25,7 +25,7 @@ def test_fetch_creates_articles() -> None:
         status=200,
     )
 
-    # 2) Stub EFetch → return minimal XML for each PMID
+    # Stub EFetch → return minimal XML for each PMID
     # TODO: put this into a pytest fixture
     articles_xml = ""
     for id in ids:
@@ -61,8 +61,8 @@ def test_fetch_creates_articles() -> None:
     )
 
     # Act
-    # Run the command (TQDM_RANGE=2 → only month=1)
-    call_command("fetch_data")
+    # Run the command (MONTH_RANGE=2 → only month=1)
+    call_command("fetch_data", month_range=2)
 
     # Assert
     articles = Article.objects.all()
@@ -114,8 +114,8 @@ def test_fetch_updates_existing_article() -> None:
     # Act and Assert
     # First run → creates
     call_command("fetch_data")
-    art = Article.objects.get(pmid="100")
-    assert art.title == "Title A"
+    article = Article.objects.get(pmid="100")
+    assert article.title == "Title A"
 
     # Round 2
     # Arrange
@@ -152,8 +152,8 @@ def test_fetch_updates_existing_article() -> None:
     # Act and Assert
     # Second run → updates
     call_command("fetch_data")
-    art.refresh_from_db()
-    assert art.title == "Title B"
+    article.refresh_from_db()
+    assert article.title == "Title B"
 
 
 @pytest.mark.django_db

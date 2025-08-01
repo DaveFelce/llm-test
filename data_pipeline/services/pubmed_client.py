@@ -25,7 +25,8 @@ class PubMedClient:
           3) MedlineCitation/DateRevised
           4) PubmedData/History PubMedPubDate[@PubStatus="pubmed"]
         """
-        # 1) Look for the original creation date
+
+        # Look for the original creation date
         date_created_node = pubmed_article_element.find(
             ".//MedlineCitation/DateCreated"
         )
@@ -35,7 +36,7 @@ class PubMedClient:
             day_text = date_created_node.findtext("Day")
             return date(int(year_text), int(month_text), int(day_text))
 
-        # 2) Next, try the journal’s publication date
+        # Next, try the journal’s publication date
         journal_pub_date_node = pubmed_article_element.find(
             ".//JournalIssue/PubDate"
         )
@@ -46,7 +47,7 @@ class PubMedClient:
             day_text = journal_pub_date_node.findtext("Day") or "1"
             return date(int(year_text), int(month_text), int(day_text))
 
-        # 3) Then, the last‐revised date
+        # Then, the last‐revised date
         date_revised_node = pubmed_article_element.find(
             ".//MedlineCitation/DateRevised"
         )
@@ -56,7 +57,7 @@ class PubMedClient:
             day_text = date_revised_node.findtext("Day")
             return date(int(year_text), int(month_text), int(day_text))
 
-        # 4) Finally, the PubMed “pubmed” history date
+        # Finally, the PubMed “pubmed” history date
         pubmed_history_date_node = pubmed_article_element.find(
             './/PubmedData/History/PubMedPubDate[@PubStatus="pubmed"]'
         )
@@ -78,9 +79,8 @@ class PubMedClient:
     def fetch(self, query: str, start_date: date, end_date: date, limit: int = 30) -> list[ArticleData]:
         """Fetches articles from PubMed based on a query and date range."""
 
-        logger.info(f"Fetching articles for query: {query} from {start_date} to {end_date}")
-
-        # 1) ESearch to get PMIDs
+        # TODO: batch requests if limit is high
+        # Two stage process: first query ESearch to get PMIDs
         esearch_params = {
             "db": "pubmed",
             "term": query,
@@ -91,6 +91,8 @@ class PubMedClient:
             "retmode": "json",
         }
 
+        logger.info(f"Fetching articles for query: {query} from {start_date} to {end_date}")
+
         resp = requests.get(PubMedURLs.ESEARCH_URL, params=esearch_params)
         logger.debug(f"ESearch response: {resp.status_code} {resp.text}")
         resp.raise_for_status()
@@ -100,7 +102,7 @@ class PubMedClient:
             logger.info(f"No PubMed IDs found in response: {resp.text}")
             return []
 
-        # 2) EFetch to retrieve full records (XML)
+        # Then query EFetch to retrieve full records (XML)
         efetch_params = {
             "db": "pubmed",
             "id": ",".join(ids),
@@ -110,7 +112,7 @@ class PubMedClient:
         logger.debug(f"EFetch response: {resp.status_code} {resp.text}")
         resp.raise_for_status()
 
-        # 3) Parse XML
+        # Parse XML
         root = ET.fromstring(resp.text)
         results: list[ArticleData] = []
         for article in root.findall(".//PubmedArticle"):

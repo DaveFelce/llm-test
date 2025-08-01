@@ -12,6 +12,7 @@ class FactChecker:
     identifying unsupported statements and computing a hallucination score.
     """
 
+    # Set temperature to 0 for deterministic outputs
     def __init__(self):
         self.llm = ChatOpenAI(
             model="gpt-3.5-turbo",

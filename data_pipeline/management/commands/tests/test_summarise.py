@@ -5,7 +5,7 @@ from django.core.management import call_command
 
 
 @pytest.mark.django_db
-def test_summarize_creates_summaries(monkeypatch):
+def test_summarize_creates_summaries(monkeypatch: pytest.MonkeyPatch):
     """
     Given three unsummarized Articles, the summarize command should
     create exactly three Summary objects with the text returned by LLMOrchestrator.summarize.
@@ -36,16 +36,20 @@ def test_summarize_creates_summaries(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_summarize_skips_already_summarized(monkeypatch):
+def test_summarize_skips_already_summarized(monkeypatch: pytest.MonkeyPatch):
     """
     Articles that already have a Summary should be ignored.
     Running the command should not create duplicate summaries.
     """
     # Arrange: one article with existing summary, one without
-    art1 = Article.objects.create(pmid="100", title="Title", abstract="Abstract", pub_date="2020-01-01", raw_json={})
-    Summary.objects.create(article=art1, text="Existing summary")
+    article1 = Article.objects.create(
+        pmid="100", title="Title", abstract="Abstract", pub_date="2020-01-01", raw_json={}
+    )
+    Summary.objects.create(article=article1, text="Existing summary")
 
-    art2 = Article.objects.create(pmid="101", title="Title2", abstract="AbstractB", pub_date="2020-01-02", raw_json={})
+    article2 = Article.objects.create(
+        pmid="101", title="Title2", abstract="AbstractB", pub_date="2020-01-02", raw_json={}
+    )
 
     # Stub LLM
     monkeypatch.setattr(LLMOrchestrator, "summarize", lambda self, abstract: "New summary")
@@ -54,21 +58,23 @@ def test_summarize_skips_already_summarized(monkeypatch):
     call_command("summarize")
 
     # Assert
-    assert Summary.objects.filter(article=art1).count() == 1  # untouched
-    summaries_for_art2 = Summary.objects.filter(article=art2)
-    assert summaries_for_art2.count() == 1
-    assert summaries_for_art2.first().text == "New summary"
+    assert Summary.objects.filter(article=article1).count() == 1  # untouched
+    summaries_for_article2 = Summary.objects.filter(article=article2)
+    assert summaries_for_article2.count() == 1
+    assert summaries_for_article2.first().text == "New summary"
 
 
 @pytest.mark.django_db
-def test_summarize_continues_on_error(monkeypatch, caplog):
+def test_summarize_continues_on_error(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture):
     """
     If the orchestrator raises on one article, the command should log an error
     and still process the remaining articles.
     """
     # Arrange: two articles
-    art1 = Article.objects.create(pmid="200", title="Title1", abstract="Abstract1", pub_date="2020-01-01", raw_json={})
-    art2 = Article.objects.create(pmid="201", title="Title2", abstract="Abstract2", pub_date="2020-01-02", raw_json={})
+    Article.objects.create(pmid="200", title="Title1", abstract="Abstract1", pub_date="2020-01-01", raw_json={})
+    article2 = Article.objects.create(
+        pmid="201", title="Title2", abstract="Abstract2", pub_date="2020-01-02", raw_json={}
+    )
 
     # First call raises, second returns normally
     def flaky_summarize(self, abstract):
@@ -87,5 +93,5 @@ def test_summarize_continues_on_error(monkeypatch, caplog):
     # The error should have been logged
     assert "Error summarizing PMID=200: LLM service down" in caplog.text
     # And the second article should succeed
-    summary = Summary.objects.get(article=art2)
+    summary = Summary.objects.get(article=article2)
     assert summary.text == "OK"
