@@ -26,6 +26,7 @@
 ## TODO
 1. Write unit tests. At the moment, only integration tests are written.
 2. Write a LOT more tests for the pubmed client and the services
+3. Use Entrez library for PubMed API calls instead of the custom `PubMedClient` class
 
 ## High level architecture diagram
 
