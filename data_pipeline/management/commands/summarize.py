@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 from data_pipeline.models import Article, Summary
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "Generate layperson summaries for all unsummarized Articles"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--batch-size",
             type=int,
@@ -20,7 +21,7 @@ class Command(BaseCommand):
             help="Number of articles to process in each batch",
         )
 
-    def process_article(self, orchestrator, article):
+    def process_article(self, orchestrator: LLMOrchestrator, article: str) -> bool:
         """Process a single article and generate its summary."""
         try:
             summary_text = orchestrator.summarize(article.abstract)

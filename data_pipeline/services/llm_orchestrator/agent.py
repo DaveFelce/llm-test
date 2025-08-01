@@ -1,5 +1,3 @@
-from typing import List
-
 from django.conf import settings
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -11,6 +9,7 @@ class LLMOrchestrator:
     Service for orchestrating LLM-powered summaries and trend synthesis.
     """
 
+    # Set temperature to 0.7 for more creative outputs
     def __init__(self):
         self.llm = ChatOpenAI(
             model="gpt-3.5-turbo",
@@ -48,6 +47,6 @@ class LLMOrchestrator:
     def summarize(self, abstract: str) -> str:
         return self.summary_chain.invoke({"abstract": abstract}).strip()
 
-    def synthesize_trends(self, summaries: List[str]) -> str:
+    def synthesize_trends(self, summaries: list[str]) -> str:
         combined = "\n\n".join(summaries)
         return self.trend_chain.invoke({"summaries": combined}).strip()

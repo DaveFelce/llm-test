@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 from data_pipeline.models import Summary, TrendReport
@@ -15,7 +16,7 @@ DEFAULT_MAX_SCORE = 0.3
 class Command(BaseCommand):
     help = 'Create "Trends in Covid Research in 2020" article and validate it'
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--min-summaries",
             type=int,
@@ -35,7 +36,7 @@ class Command(BaseCommand):
         logger.info("Found %s summaries for analysis", len(summaries))
         return summaries
 
-    def generate_trends(self, orchestrator, summaries):
+    def generate_trends(self, orchestrator: LLMOrchestrator, summaries: list[str]) -> None:
         """Generate trends article from summaries."""
         try:
             article_text = orchestrator.synthesize_trends(summaries)
@@ -45,7 +46,7 @@ class Command(BaseCommand):
             logger.error("Failed to generate trends article: %s", str(e))
             raise
 
-    def check_facts(self, checker, article_text, source_text):
+    def check_facts(self, checker: FactChecker, article_text: str, source_text: str) -> tuple[float, list[str]]:
         """Validate the generated article against source summaries."""
         try:
             score, issues = checker.score(article_text, source_text)
@@ -55,7 +56,7 @@ class Command(BaseCommand):
             logger.error("Failed to complete fact checking: %s", str(e))
             raise
 
-    def save_report(self, article_text, issues):
+    def save_report(self, article_text: str, issues: list[str]) -> TrendReport:
         """Save the trends report to the database."""
         try:
             with transaction.atomic():

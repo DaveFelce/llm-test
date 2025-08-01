@@ -6,7 +6,7 @@ from django.core.management import call_command
 
 
 @pytest.mark.django_db
-def test_synthesize_creates_trendreport(monkeypatch, capsys):
+def test_synthesize_creates_trendreport(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture):
     # Arrange: three Articles with raw_json, each with a linked Summary
     for idx, text in enumerate(["sum1", "sum2", "sum3"], start=1):
         article = Article.objects.create(
@@ -44,7 +44,7 @@ def test_synthesize_creates_trendreport(monkeypatch, capsys):
 
 
 @pytest.mark.django_db
-def test_synthesize_with_no_summaries(monkeypatch, capsys):
+def test_synthesize_with_no_summaries(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture):
     # No Summary rows in the DB
 
     # Stub LLM to return an empty-report placeholder
