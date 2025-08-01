@@ -35,15 +35,15 @@ example to work from. The test runs just this llm on the entries found in test-f
 just save from running the previous steps) coupled with the intended outputs.
 
 ```text
-llm_orchestrator/
-├── fixtures/
-│   ├── examples.json
-│   └── test-fixtures.json
-├── agent.py
-├── system-prompt.jinja
-├── prompt.jinja
-├── models.py
-└── test_agent.py
+summary_judge_claim_check/
+  fixtures/
+    examples.json
+    test-fixtures.json
+  agent.py
+  system-prompt.jinja
+  prompt.jinja
+  models.py
+  test_agent.py
 ```
 
 ## High level architecture diagram
