@@ -92,3 +92,74 @@ llm_orchestrator/
                        |  Validations, |
                        |  TrendReports)|
                        +---------------+
+```
+
+## Possible deployment options
+
+```text
++----------------+                           +------------------+           
+|  EventBridge   |───on-schedule or manual──►|  Step Functions  |◄───┐
+| (cron trigger) |                           | State Machine    |    │
++----------------+                           +------------------+    │
+        │                                             │              │
+        │                                             ▼              │
+        │           +────────────────────────+   success?            │
+        └────────►  |  RunTask: fetch_data   | ──────────────────────┘
+                    |  (ECS Fargate task)    |
+                    +────────────────────────+  
+                                  │
+                                  ▼
+                    +────────────────────────+
+                    |  RunTask: summarize    |
+                    +────────────────────────+
+                                  │
+                                  ▼
+                    +────────────────────────+
+                    |  RunTask: validate     |
+                    +────────────────────────+
+                                  │
+                                  ▼
+                    +────────────────────────+
+                    |  RunTask: synthesize   |
+                    +────────────────────────+
+                                  │
+                                  ▼
+                    +────────────────────────+
+                    |  (Optional) Notify via │
+                    |  SNS / Slack / Email   |
+                    +────────────────────────+
+```
+	1.	Containerized tasks (ECS Fargate)
+	2.	Step Functions for orchestration
+	3.	EventBridge (or manual trigger) to kick off the workflow
+	4.	RDS for Postgres and Secrets Manager (or Parameter Store) for credentials
+
+	1.	Build and publish the Docker image
+	•	Build a single image containing your Django app + management commands.
+	•	Store credentials (DATABASE_URL, OPENAI_API_KEY, etc.) in AWS Secrets Manager or Parameter Store.
+	•	Push the image to ECR.
+
+	2.	Set up Postgres on RDS
+	•	One RDS instance or cluster for your production database.
+	•	Grant network access only to your ECS tasks (via VPC + security groups).
+
+	3.	Define ECS Task Definitions
+	•	One task definition (same container) but with different command: overrides:
+	•	python manage.py fetch_data
+	•	python manage.py summarize
+	•	python manage.py validate
+	•	python manage.py synthesize
+	•	Each task reads its env vars (DB URL, API key) from Secrets Manager.
+
+	4.	Orchestrate with Step Functions
+	•	Create a Step Functions state machine with four RunTask steps.
+	•	Configure “Retry” and “Catch” behavior on each step so failures can trigger alerts or retries.
+	•	By default it will only move to the next step when the prior ECS task returns a 0 exit code.
+
+	5.	Schedule or Trigger
+	•	Use EventBridge (cron rule) to execute your state machine on whatever cadence you need (daily, hourly, etc.).
+	•	Or run the state machine on‐demand via the AWS Console, SDK, or a CI/CD pipeline.
+
+	6.	Monitoring & Notifications
+	•	CloudWatch Logs automatically collect stdout/stderr from each ECS task.
+	•	Alarms on Step Functions failures (or on unusually high latency) can fire SNS notifications.
